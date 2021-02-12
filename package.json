@@ -4,7 +4,7 @@
   "description": "Baileys API using express",
   "main": "govind.js",
   "scripts": {
-    "debug": "node --inspect ./app.js",
+    "debug": "node --inspect ./govind.js",
     "start": "node ./govind.js",
     "doc": "npx http-server -o ./baileysDoc141/",
     "test": "echo \"Error: no test specified\" && exit 1"
