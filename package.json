@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "debug": "node --inspect ./app.js",
-    "start": "node ./app.js",
+    "start": "node ./govind.js",
     "doc": "npx http-server -o ./baileysDoc141/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
