@@ -1,4 +1,5 @@
 const { WAConnection, MessageType } = require('@adiwajshing/baileys')
+const fs = require('fs')
 const express = require('express')
 const newinstance = require('./newinstance')
 const mkEvents = require('./events')
@@ -13,15 +14,34 @@ app.get('/', (req, res) => {
 
 app.post('/new', express.json(), async (req, res) => {
   const { webhook } = req.body
-  newinstance({ webhook })
-  res.status(200).json({ type: 'new', webhook })
+  console.log(webhook)
+  // newinstance({ webhook })
+  // res.status(200).json({ type: 'new', webhook })
+})
+
+app.get('/:userid/login', async (req, res) => {
+  const { userid } = req.params
+  console.log(userid)
+  // newinstance({ userid })
+  if (fs.existsSync(`qr/${userid}.json`)) {
+    var qr = fs.readFileSync(`qr/${userid}.json`, {encoding:'utf8', flag:'r'});
+    res.status(200).json(JSON.parse(qr));
+  } else {
+    if (fs.existsSync(`auth_info/${userid}.json`)) {
+      res.status(200).send({ type: 'login' });
+    } else {
+      console.log('new')
+      newinstance({ webhook: userid })
+      res.status(200).send({ type: 'new' });
+    }
+  }
 })
 
 app.get('/:number/up', async (req, res) => {
   const { number } = req.params
   if (!patchpanel.has(number)) {
     const WAC = new WAConnection() 
-    WAC.browserDescription = ['danarn17', 'Chrome', '87']
+    WAC.browserDescription = ['Affiliaters.in', 'Chrome', '87']
     WAC.loadAuthInfo(`./auth_info/${number}.json`)
 
     const sharedstate = {}
@@ -72,15 +92,34 @@ app.get('/:number/sendtextmessage/to/:to/message/:msg', async (req, res) => {
   }
 })
 
+app.post('/:number/sendtextmessage', express.json(), async (req, res) => {
+  let phone = req.body.chatId;
+  let message = req.body.message;
+  
+  console.log(phone)
+  console.log(message)
+  const { WAC } = patchpanel.get(req.params.number)
+  WAC.sendMessage(phone, message, MessageType.text);
+  res.status(200).json({ type: 'done' })
+});
+
 app.get('/:number/contacts', (req, res) => {
   const number = req.params.number
 
   if (patchpanel.has(number)) {
     const { WAC } = patchpanel.get(number)
     if (WAC.contacts) {
-      const contacts = Object.keys(WAC.contacts)
-        .filter(el => el.indexOf('-') === -1)
-        .map(el => el.split('@s.whatsapp.net')[0])
+      // console.log(WAC.contacts)
+      const contacts =  Object.values(WAC.contacts)        
+        .filter(function(item) {
+              // console.log(item)
+              if (item['jid'].includes('@g.us'))
+                  return { groupid: item['jid'], groupname : item['name'] }
+          })
+          .map(function(item) {
+            if (item['jid'].includes('@g.us'))
+                  return { groupid: item['jid'], groupname : item['name'] }
+        });
 
       res.status(200).json(contacts)
     } else {
