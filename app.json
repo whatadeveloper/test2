@@ -1,7 +1,7 @@
 {
   "name": "baileys-endpoint",
   "description": "Baileys API using express",
-  "repository": "https://github.com/coolgovind/baileynetlifytest",
+  "repository": "https://github.com/whatadeveloper/botwatest",
   "logo": "https://avatars2.githubusercontent.com/u/39963063",
   "keywords": ["whatsapp", "api", "heroku"],
   "image": "heroku/nodejs"
