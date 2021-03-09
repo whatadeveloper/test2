@@ -2,10 +2,10 @@
   "name": "baileys-endpoint",
   "version": "1.0.0",
   "description": "Baileys API using express",
-  "main": "govind.js",
+  "main": "app.js",
   "scripts": {
-    "debug": "node --inspect ./govind.js",
-    "start": "node ./govind.js",
+    "debug": "node --inspect ./app.js",
+    "start": "node ./app.js",
     "doc": "npx http-server -o ./baileysDoc141/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

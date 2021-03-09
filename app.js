@@ -6,7 +6,7 @@ const fs = require("fs");
 const qrcode = require("qrcode");
 const axios = require("axios");
 const mkEvents = require('./events')
-const port = process.env.PORT || 5162;
+const port = process.env.PORT || 5530;
 const {
     WAConnection,
     MessageType,
@@ -30,11 +30,11 @@ conn.autoReconnect = ReconnectMode.onConnectionLost;
 // conn.connectOptions = { reconnectID: "reconnect" };
 
 async function connect() {
-    fs.existsSync("./auth_info/govind.json") && conn.loadAuthInfo("./auth_info/govind.json");
+    fs.existsSync("./auth_info/cool.json") && conn.loadAuthInfo("./auth_info/cool.json");
     const sharedstate = {}
     sharedstate.conn = conn
 
-    const events = mkEvents({ number:'govind', sharedstate })
+    const events = mkEvents({ number:'cool', sharedstate })
     conn.on('blocklist-update', events.blocklistUpdate)
     conn.on('chat-new', events.chatNew)
     conn.on('chats-received', events.chatsReceived)
@@ -55,7 +55,7 @@ async function connect() {
     conn.on('ws-close', events.wsClose)
 
     await conn.connect({ timeoutMs: 30 * 1000 });
-    patchpanel.set('govind', { conn, sharedstate })
+    patchpanel.set('cool', { conn, sharedstate })
     console.log("oh hello " + conn.user.name + " (" + conn.user.jid + ")");
 }
 
@@ -69,8 +69,8 @@ conn.on("close", async({ reason, isReconnecting }) => {
         "Disconnected because " + reason + ", reconnecting: " + isReconnecting
     );
     if (!isReconnecting) {
-        if (fs.existsSync("./auth_info/govind.json")) {
-            fs.unlinkSync("./auth_info/govind.json");
+        if (fs.existsSync("./auth_info/cool.json")) {
+            fs.unlinkSync("./auth_info/cool.json");
         }
         conn.clearAuthInfo();
         await conn.connect({ timeoutMs: 30 * 1000 });
@@ -78,20 +78,17 @@ conn.on("close", async({ reason, isReconnecting }) => {
 });
 
 conn.on("credentials-updated", () => {
-    // save credentials whenever updated
     console.log(`credentials updated`);
     const authInfo = conn.base64EncodedAuthInfo(); // get all the auth info we need to restore this session
-    fs.writeFileSync("./auth_info/govind.json", JSON.stringify(authInfo, null, "\t")); // save this info to a file
+    fs.writeFileSync("./auth_info/cool.json", JSON.stringify(authInfo, null, "\t")); // save this info to a file
     console.log('Saved to json file')
 });
 
 let lastqr;
 conn.on('qr', qr => {
     qrcode.toDataURL(qr, (err, url) => {
-        // console.log(qr);
         lastqr = url;
     });
-    // lastqr = qr
 });
 app.get("/lastqr", (req, res) => {
     // console.log(lastqr);
@@ -99,7 +96,7 @@ app.get("/lastqr", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-    if (fs.existsSync("./auth_info/govind.json")){
+    if (fs.existsSync("./auth_info/cool.json")){
         res.send("loggedin");
     } else {
         res.status(200).json({ lastqr })
@@ -108,8 +105,8 @@ app.get("/login", (req, res) => {
 
 app.get("/qr", (req, res) => {
     if (
-        fs.existsSync("./auth_info/govind.json") &&
-        conn.loadAuthInfo("./auth_info/govind.json")
+        fs.existsSync("./auth_info/cool.json") &&
+        conn.loadAuthInfo("./auth_info/cool.json")
     ) {
         res.send("Session Exist");
     } else {
@@ -122,8 +119,6 @@ app.get("/qr", (req, res) => {
 app.post("/send-message", (req, res) => {
     let phone = req.body.number;
     let message = req.body.message;
-    // let firstnumber = phone.substr(0, 1);
-    //   console.log(firstnumber);
     if (phone == undefined || message == undefined) {
         res.send({
             status: "error",
@@ -131,13 +126,6 @@ app.post("/send-message", (req, res) => {
         });
         console.log("number and message undefined");
     } else {
-        // if (firstnumber == "8") {
-        //   phone = "62".concat(phone);
-        // } else if (firstnumber == "0") {
-        //   phone = phone.replace("0", "62");
-        // }
-        // conn.isOnWhatsApp(phone).then((is) => {
-        //     if (is) {
         conn
             .sendMessage(phone, message, MessageType.text)
             .then((response) => {
@@ -147,14 +135,6 @@ app.post("/send-message", (req, res) => {
                 });
                 console.log(`Message successfully sent to ${phone}`);
             });
-        // else {
-        //     res.send({
-        //         status: "error",
-        //         message: phone + " is not a whatsapp user",
-        //     });
-        //     console.log(`${phone} is not a whatsapp number`);
-        // }
-        // });
     }
 });
 
@@ -190,25 +170,6 @@ app.get("/get-chats", (req, res) => {
         .catch(() => {
             res.send({ status: "error", message: "getchatserror" });
         });
-    // const unread = await conn.loadAllUnreadMessages ()
-    //       console.log ("you have " + unread.length + " unread messages")
-
-    // const chats = conn.getChats()
-    // if (cursor) {
-    //     const moreChats = conn.loadChats (20, cursor) // load the next 25 chats
-    // }
-    // console.log(cursor)
-    // console.log(chats)
-    // res.send({ status: "success", message: chats });
-    // conn
-    //   .getChats()
-    //   .then((chats) => {
-    //     // console.log(chats);
-    //     res.send({ status: "success", message: chats });
-    //   })
-    //   .catch(() => {
-    //     res.send({ status: "error", message: "getchatserror" });
-    //   });
 });
 
 server.listen(port, () => {
