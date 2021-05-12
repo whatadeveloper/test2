@@ -6,7 +6,7 @@ const fs = require("fs");
 const qrcode = require("qrcode");
 const axios = require("axios");
 const mkEvents = require('./events')
-const port = process.env.PORT || 5530;
+const port = process.env.PORT || 7001;
 const {
     WAConnection,
     MessageType,
@@ -20,6 +20,8 @@ const {
     waChatKey,
 } = require("@adiwajshing/baileys");
 
+const username = 'Cool';
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const patchpanel = new Map()
@@ -27,14 +29,13 @@ const patchpanel = new Map()
 const conn = new WAConnection();
 conn.browserDescription = ['Affiliaters.in', 'Chrome', '87']
 conn.autoReconnect = ReconnectMode.onConnectionLost;
-// conn.connectOptions = { reconnectID: "reconnect" };
 
 async function connect() {
-    fs.existsSync("./auth_info/cool.json") && conn.loadAuthInfo("./auth_info/cool.json");
+    fs.existsSync("./auth_info/"+username+".json") && conn.loadAuthInfo("./auth_info/"+username+".json");
     const sharedstate = {}
     sharedstate.conn = conn
 
-    const events = mkEvents({ number:'cool', sharedstate })
+    const events = mkEvents({ number:username, sharedstate })
     conn.on('blocklist-update', events.blocklistUpdate)
     conn.on('chat-new', events.chatNew)
     conn.on('chats-received', events.chatsReceived)
@@ -55,7 +56,7 @@ async function connect() {
     conn.on('ws-close', events.wsClose)
 
     await conn.connect({ timeoutMs: 30 * 1000 });
-    patchpanel.set('cool', { conn, sharedstate })
+    patchpanel.set(username, { conn, sharedstate })
     console.log("oh hello " + conn.user.name + " (" + conn.user.jid + ")");
 }
 
@@ -69,18 +70,18 @@ conn.on("close", async({ reason, isReconnecting }) => {
         "Disconnected because " + reason + ", reconnecting: " + isReconnecting
     );
     if (!isReconnecting) {
-        if (fs.existsSync("./auth_info/cool.json")) {
-            fs.unlinkSync("./auth_info/cool.json");
+        if (fs.existsSync("./auth_info/"+username+".json")) {
+            fs.unlinkSync("./auth_info/"+username+".json");
         }
         conn.clearAuthInfo();
         await conn.connect({ timeoutMs: 30 * 1000 });
     }
 });
 
-conn.on("credentials-updated", () => {
+conn.on("contacts-received", () => {
     console.log(`credentials updated`);
-    const authInfo = conn.base64EncodedAuthInfo(); // get all the auth info we need to restore this session
-    fs.writeFileSync("./auth_info/cool.json", JSON.stringify(authInfo, null, "\t")); // save this info to a file
+    const authInfo = conn.base64EncodedAuthInfo();
+    fs.writeFileSync("./auth_info/"+username+".json", JSON.stringify(authInfo, null, "\t"));
     console.log('Saved to json file')
 });
 
@@ -91,12 +92,11 @@ conn.on('qr', qr => {
     });
 });
 app.get("/lastqr", (req, res) => {
-    // console.log(lastqr);
     res.status(200).json({ lastqr })
 });
 
 app.get("/login", (req, res) => {
-    if (fs.existsSync("./auth_info/cool.json")){
+    if (fs.existsSync("./auth_info/"+username+".json")){
         res.send("loggedin");
     } else {
         res.status(200).json({ lastqr })
@@ -105,14 +105,12 @@ app.get("/login", (req, res) => {
 
 app.get("/qr", (req, res) => {
     if (
-        fs.existsSync("./auth_info/cool.json") &&
-        conn.loadAuthInfo("./auth_info/cool.json")
+        fs.existsSync("./auth_info/"+username+".json") &&
+        conn.loadAuthInfo("./auth_info/"+username+".json")
     ) {
         res.send("Session Exist");
     } else {
-        var page = `<html><head></head><body> <img src="" alt="Loading Please Wait" id="qrcode"></body> <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.1/socket.io.js" integrity="sha512-vGcPDqyonHb0c11UofnOKdSAt5zYRpKI4ow+v6hat4i96b7nHSn8PQyk0sT5L9RECyksp+SztCPP6bqeeGaRKg==" crossorigin="anonymous"></script> <script>$(document).ready(function(){var socket=io.connect({'transports':['websocket']});socket.on('qr',function(msg){$('#qrcode').attr('src',msg);});});</script> </html>`;
-        res.write(page);
-        res.end();
+        
     }
 });
 
@@ -126,16 +124,86 @@ app.post("/send-message", (req, res) => {
         });
         console.log("number and message undefined");
     } else {
-        conn
-            .sendMessage(phone, message, MessageType.text)
-            .then((response) => {
-                res.send({
-                    status: "success",
-                    message: "Message successfully sent to " + phone,
-                });
-                console.log(`Message successfully sent to ${phone}`);
-            });
+        try {
+            conn.sendMessage(phone, message, MessageType.text)
+            console.log(`Message successfully sent to ${phone}`);
+        } catch (error) {
+          console.log(error);
+        }
     }
+});
+
+app.post("/send-image", (req, res) => {
+    let phone = req.body.number;
+    let message = req.body.message;
+    let imageurl = req.body.imageurl;
+    if (phone == undefined || message == undefined) {
+        res.send({
+            status: "error",
+            message: "please enter valid phone and message",
+        });
+        console.log("number and message undefined");
+    } else {
+        var Data = imageurl;
+        conn.sendMessage(
+            phone, 
+            { url: Data }, // send directly from remote url!
+            MessageType.image, 
+            { mimetype: Mimetype.png, filename: "affiliaters.png",caption: message }
+        ).then(response => {
+            res.send({
+                status: "success",
+                message: "Message successfully sent to " + phone,
+            });
+        }).catch((error) => console.log(error))
+    }
+});
+
+
+app.post("/send-message-bulk", (req, res) => {
+        try{
+            let message = req.body.message;
+            req.body.allgroups.forEach(function(group) {
+                conn.sendMessage(
+                    group, 
+                    message, // send directly from remote url!
+                    MessageType.text
+                ).catch((error) => {
+                    console.log(error)
+                });
+            })
+            console.log('Message Sending Complete in '+ req.body.allgroups.length)
+        } catch (error) {
+          console.log(error);
+        } 
+});
+
+app.post("/send-image-bulk", (req, res) => {
+    try{
+        let message = req.body.message;
+        axios({
+            method: "get",
+            url: req.body.imageurl,
+            responseType: "arraybuffer"
+        }).then(function (response) {
+            var Data = response.data;
+            req.body.allgroups.forEach(function(group) {
+                conn.sendMessage(
+                    group, 
+                    Data, // send directly from remote url!
+                    MessageType.image, 
+                    { mimetype: Mimetype.png, filename: "affiliaters.png",caption: message }
+                ).catch((error) => {
+                    console.log(error)
+                });
+            })
+        }).catch((error) => {
+            console.log(error)
+        });
+        console.log('Image Sending Complete')
+    } catch (error) {
+      console.log(error);
+    } 
 });
 
 app.get("/affiliaters", (req, res) => {
@@ -149,27 +217,21 @@ app.get("/affiliaters", (req, res) => {
             console.log('Replacement results:', results);
         })
         .catch(error => {
-            console.error('Error occurred:', error);
+            console.log('Error occurred:', error);
         });
 });
 
-app.get("/get-chats", (req, res) => {
-    conn
-        .loadChats()
-        .then((unread) => {
-            let uu = unread.chats;
-            let extractedValue = uu.filter(function(item) {
-                if (item['jid'].includes('@g.us'))
-                    return { groupid: item['jid'], groupname: item['name'], groupimg: item['imgUrl'] }
-            }).map(function(item) {
-                if (item['jid'].includes('@g.us'))
-                    return { groupid: item['jid'], groupname: item['name'], groupimg: item['imgUrl'] }
-            });
-            res.send({ status: "success", message: extractedValue });
-        })
-        .catch(() => {
-            res.send({ status: "error", message: "getchatserror" });
-        });
+app.get("/get-chats", async (req, res) => {
+    var unread = await conn.loadChats();
+    let uu = unread.chats;
+    let extractedValue = uu.filter(function(item) {
+        if (item['jid'].includes('@g.us'))
+            return { groupid: item['jid'], groupname: item['name'], groupimg: item['imgUrl'] }
+    }).map(function(item) {
+        if (item['jid'].includes('@g.us'))
+            return { groupid: item['jid'], groupname: item['name'], groupimg: item['imgUrl'] }
+    });
+    res.send({ status: "success", message: extractedValue });
 });
 
 server.listen(port, () => {
