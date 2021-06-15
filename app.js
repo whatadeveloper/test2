@@ -29,7 +29,7 @@ const patchpanel = new Map()
 const conn = new WAConnection();
 conn.browserDescription = ['Affiliaters.in', 'Chrome', '87']
 
-let { data } = await axios.get("https://web.whatsapp.com/check-update?version="+conn.version.join(".")+"&platform=web");
+let { data } = axios.get("https://web.whatsapp.com/check-update?version="+conn.version.join(".")+"&platform=web");
 
 let { currentVersion, isBelowHard } = data;
 
