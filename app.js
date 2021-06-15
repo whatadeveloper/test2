@@ -29,11 +29,7 @@ const patchpanel = new Map()
 const conn = new WAConnection();
 conn.browserDescription = ['Affiliaters.in', 'Chrome', '87']
 
-let { data } = axios.get("https://web.whatsapp.com/check-update?version="+conn.version.join(".")+"&platform=web");
-
-let { currentVersion, isBelowHard } = data;
-
-conn.version = isBelowHard ? currentVersion.split(".").map(a => parseInt(a)) : conn.version;
+conn.version = [2, 2121, 7]
 
 conn.autoReconnect = ReconnectMode.onConnectionLost;
 
