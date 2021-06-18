@@ -1,5 +1,5 @@
 # baileys-whatsapp-api
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+[![Deploy](https://git-scm.com/images/logos/downloads/Git-Icon-1788C.png)](https://heroku.com/deploy)
 ## Install
 ```bash
 git clone https://github.com/danarn17/baileys-whatsapp-api danarn17
