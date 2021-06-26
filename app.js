@@ -128,10 +128,25 @@ app.post("/send-message", (req, res) => {
         console.log("number and message undefined");
     } else {
         try {
-            conn.sendMessage(phone, message, MessageType.text)
-            console.log(`Message successfully sent to ${phone}`);
+            if (conn.phoneConnected) {
+                conn.sendMessage(phone, message, MessageType.text)
+                console.log(`Message successfully sent to ${phone}`);
+                res.send({
+                    status: "success",
+                    message: "Done",
+                });
+            } else {
+                res.send({
+                    status: "error",
+                    message: "Failed logout",
+                });
+            }
         } catch (error) {
-          console.log(error);
+            console.log(error);
+            res.send({
+                status: "error",
+                message: "Failed",
+            });
         }
     }
 });
@@ -183,27 +198,40 @@ app.post("/send-message-bulk", (req, res) => {
 
 app.post("/send-image-bulk", (req, res) => {
     try{
-        let message = req.body.message;
-        axios({
-            method: "get",
-            url: req.body.imageurl,
-            responseType: "arraybuffer"
-        }).then(function (response) {
-            var Data = response.data;
-            req.body.allgroups.forEach(function(group) {
-                conn.sendMessage(
-                    group, 
-                    Data, // send directly from remote url!
-                    MessageType.image, 
-                    { mimetype: Mimetype.png, filename: "affiliaters.png",caption: message }
-                ).catch((error) => {
-                    console.log(error)
+        if (conn.phoneConnected) {
+            let message = req.body.message;
+            axios({
+                method: "get",
+                url: req.body.imageurl,
+                responseType: "arraybuffer"
+            }).then(function (response) {
+                var Data = response.data;
+                req.body.allgroups.forEach(function(group) {
+                    conn.sendMessage(
+                        group, 
+                        Data, // send directly from remote url!
+                        MessageType.image, 
+                        { mimetype: Mimetype.png, filename: "affiliaters.png",caption: message }
+                    ).catch((error) => {
+                        console.log(error)
+                    });
+                })
+            }).catch((error) => {
+
+                console.log(error)
+                res.send({
+                    status: "error",
+                    message: "Failed",
                 });
-            })
-        }).catch((error) => {
-            console.log(error)
-        });
-        console.log('Image Sending Complete')
+            });
+            console.log('Image Sending Complete')
+        } else {
+            console.log('Image Sending Failed')
+            res.send({
+                status: "error",
+                message: "Failed",
+            });
+        }
     } catch (error) {
       console.log(error);
     } 
