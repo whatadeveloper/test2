@@ -29,7 +29,7 @@ const patchpanel = new Map()
 const conn = new WAConnection();
 conn.browserDescription = ['Affiliaters.in', 'Chrome', '87']
 
-conn.version = [2, 2123, 7]
+conn.version = [2, 2126, 14]
 
 conn.autoReconnect = ReconnectMode.onConnectionLost;
 
