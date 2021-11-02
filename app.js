@@ -27,9 +27,9 @@ app.use(express.urlencoded({ extended: true }));
 const patchpanel = new Map()
 
 const conn = new WAConnection();
-conn.browserDescription = ['Affiliaters.in', 'Chrome', '87']
+conn.browserDescription = ['Affiliaters.in', 'Chrome', '95']
 
-conn.version = [2, 2126, 14]
+conn.version = [2,2142,11]
 
 conn.autoReconnect = ReconnectMode.onConnectionLost;
 
